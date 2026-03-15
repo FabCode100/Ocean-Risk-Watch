@@ -1,15 +1,22 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: EcoMonitor SMPT API - Ocean Temperature Monitoring and Marine Biodiversity Risk Assessment
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: temperature
+    description: Ocean temperature data and risk scores
+  - name: heatmap
+    description: Heatmap data for visualization
+  - name: regions
+    description: Regional risk summaries
+  - name: insights
+    description: AI-powered insights via Claude
 paths:
   /healthz:
     get:
@@ -24,6 +31,142 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /temperature:
+    get:
+      operationId: listTemperaturePoints
+      tags: [temperature]
+      summary: List temperature points with risk scores
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: ["7d", "30d", "90d"]
+            default: "7d"
+        - name: riskLevel
+          in: query
+          schema:
+            type: string
+            enum: ["normal", "attention", "critical"]
+        - name: limit
+          in: query
+          schema:
+            type: number
+            default: 100
+      responses:
+        "200":
+          description: List of temperature points
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TemperaturePoint"
+
+  /temperature/{id}:
+    get:
+      operationId: getTemperatureHistory
+      tags: [temperature]
+      summary: Get historical data for a specific point
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Temperature history for the point
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TemperatureHistory"
+        "404":
+          description: Point not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /heatmap:
+    get:
+      operationId: getHeatmapData
+      tags: [heatmap]
+      summary: Get optimized data for the heat map visualization
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: ["7d", "30d", "90d"]
+            default: "7d"
+        - name: riskLevel
+          in: query
+          schema:
+            type: string
+            enum: ["normal", "attention", "critical"]
+      responses:
+        "200":
+          description: Heatmap data points
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeatmapData"
+
+  /insights:
+    post:
+      operationId: generateInsights
+      tags: [insights]
+      summary: Generate AI insights for a region using Claude
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InsightRequest"
+      responses:
+        "200":
+          description: AI-generated insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InsightResponse"
+        "500":
+          description: Error generating insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /regions/risk-summary:
+    get:
+      operationId: getRegionsRiskSummary
+      tags: [regions]
+      summary: Get risk summary by region
+      responses:
+        "200":
+          description: Risk summary per region
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RegionRiskSummary"
+
+  /scheduler/trigger:
+    post:
+      operationId: triggerDataCollection
+      tags: [temperature]
+      summary: Manually trigger data collection
+      responses:
+        "200":
+          description: Data collection triggered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulerResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +177,247 @@ components:
       required:
         - status
 
+    TemperaturePoint:
+      type: object
+      properties:
+        id:
+          type: number
+        latitude:
+          type: number
+        longitude:
+          type: number
+        temperature:
+          type: number
+        historicalAvg:
+          type: number
+        historicalStdDev:
+          type: number
+        riskScore:
+          type: number
+        riskLevel:
+          type: string
+          enum: ["normal", "attention", "critical"]
+        regionName:
+          type: string
+        timestamp:
+          type: string
+        trend7d:
+          type: number
+      required:
+        - id
+        - latitude
+        - longitude
+        - temperature
+        - historicalAvg
+        - historicalStdDev
+        - riskScore
+        - riskLevel
+        - regionName
+        - timestamp
+        - trend7d
+
+    TemperatureHistory:
+      type: object
+      properties:
+        point:
+          $ref: "#/components/schemas/TemperaturePoint"
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+              temperature:
+                type: number
+              riskScore:
+                type: number
+              riskLevel:
+                type: string
+            required:
+              - timestamp
+              - temperature
+              - riskScore
+              - riskLevel
+      required:
+        - point
+        - history
+
+    HeatmapData:
+      type: object
+      properties:
+        points:
+          type: array
+          items:
+            type: object
+            properties:
+              lat:
+                type: number
+              lng:
+                type: number
+              intensity:
+                type: number
+              riskLevel:
+                type: string
+            required:
+              - lat
+              - lng
+              - intensity
+              - riskLevel
+        stats:
+          type: object
+          properties:
+            total:
+              type: number
+            critical:
+              type: number
+            attention:
+              type: number
+            normal:
+              type: number
+            avgTemperature:
+              type: number
+            maxRiskScore:
+              type: number
+          required:
+            - total
+            - critical
+            - attention
+            - normal
+            - avgTemperature
+            - maxRiskScore
+        lastUpdated:
+          type: string
+      required:
+        - points
+        - stats
+        - lastUpdated
+
+    InsightRequest:
+      type: object
+      properties:
+        regionName:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        temperature:
+          type: number
+        historicalAvg:
+          type: number
+        historicalStdDev:
+          type: number
+        riskLevel:
+          type: string
+        trend7d:
+          type: number
+      required:
+        - regionName
+        - latitude
+        - longitude
+        - temperature
+        - historicalAvg
+        - historicalStdDev
+        - riskLevel
+        - trend7d
+
+    InsightResponse:
+      type: object
+      properties:
+        regionName:
+          type: string
+        riskLevel:
+          type: string
+        diagnosis:
+          type: string
+        vulnerableSpecies:
+          type: array
+          items:
+            type: string
+        immediateActions:
+          type: array
+          items:
+            type: string
+        projection30d:
+          type: string
+        generatedAt:
+          type: string
+        cached:
+          type: boolean
+      required:
+        - regionName
+        - riskLevel
+        - diagnosis
+        - vulnerableSpecies
+        - immediateActions
+        - projection30d
+        - generatedAt
+        - cached
+
+    RegionRiskSummary:
+      type: object
+      properties:
+        regionName:
+          type: string
+        avgTemperature:
+          type: number
+        avgRiskScore:
+          type: number
+        maxRiskScore:
+          type: number
+        dominantRiskLevel:
+          type: string
+          enum: ["normal", "attention", "critical"]
+        pointsCount:
+          type: number
+        criticalCount:
+          type: number
+        attentionCount:
+          type: number
+        normalCount:
+          type: number
+        trend7d:
+          type: number
+        centerLat:
+          type: number
+        centerLng:
+          type: number
+      required:
+        - regionName
+        - avgTemperature
+        - avgRiskScore
+        - maxRiskScore
+        - dominantRiskLevel
+        - pointsCount
+        - criticalCount
+        - attentionCount
+        - normalCount
+        - trend7d
+        - centerLat
+        - centerLng
+
+    SchedulerResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        pointsCollected:
+          type: number
+        timestamp:
+          type: string
+      required:
+        - message
+        - pointsCollected
+        - timestamp
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message

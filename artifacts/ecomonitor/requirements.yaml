@@ -1,0 +1,22 @@
+packages:
+  "framer-motion": "For smooth page transitions and beautiful card entrance animations"
+  "recharts": "For the temperature history line charts"
+  "leaflet": "Core mapping library for the interactive heatmap"
+  "react-leaflet": "React bindings for Leaflet interactive maps"
+  "@types/leaflet": "TypeScript definitions for Leaflet"
+  "date-fns": "For beautifully formatting timestamps"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for safely merging Tailwind utility classes"
+
+images:
+  - path: "artifacts/ecomonitor/public/images/ocean-bg.png"
+    description: "Abstract deep ocean gradient with bioluminescent teal and cyan glowing data network lines, dark navy background, highly technical and futuristic marine vibe, high quality"
+    aspect_ratio: "16:9"
+  - path: "artifacts/ecomonitor/public/images/logo-mark.png"
+    description: "Minimal geometric logo mark representing a glowing teal ocean wave overlapping with a digital heartbeat line, completely dark background, premium branding"
+    aspect_ratio: "1:1"
+
+notes:
+  - Assumes @workspace/api-client-react provides all TanStack Query hooks
+  - Assumes Vite environment (no SSR issues with Leaflet)
+  - Uses Dark Mode natively via CSS variables
