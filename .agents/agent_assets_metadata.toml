@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "4CMkVYI_NrrpBbxqH0yq_"
+uri = "file://README.md"
+type = "text"
+title = "EcoMonitor SMPT — README"
